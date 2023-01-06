@@ -28,8 +28,20 @@
  *      .catch((error) => console.log(error.message)) // 'Error: Wrong parameter is passed!
  *                                                    //  Ask her again.';
  */
-function willYouMarryMe(/* isPositiveAnswer */) {
-  throw new Error('Not implemented');
+function willYouMarryMe(isPositiveAnswer) {
+  return new Promise((resolve, reject) => {
+    let answer;
+    if (typeof isPositiveAnswer === 'boolean') {
+      if (isPositiveAnswer) {
+        answer = 'Hooray!!! She said "Yes"!';
+      } else {
+        answer = 'Oh no, she said "No".';
+      }
+      resolve(answer);
+    } else {
+      reject(Error('Wrong parameter is passed! Ask her again.'));
+    }
+  });
 }
 
 
@@ -48,8 +60,8 @@ function willYouMarryMe(/* isPositiveAnswer */) {
  *    })
  *
  */
-function processAllPromises(/* array */) {
-  throw new Error('Not implemented');
+function processAllPromises(array) {
+  return Promise.all(array);
 }
 
 /**
@@ -71,14 +83,14 @@ function processAllPromises(/* array */) {
  *    })
  *
  */
-function getFastestPromise(/* array */) {
-  throw new Error('Not implemented');
+function getFastestPromise(array) {
+  return Promise.race(array);
 }
 
 /**
  * Return Promise object that should be resolved with value that is
  * a result of action with values of all the promises that exists in array.
- * If some of promise is rejected you should catch it and process the next one.
+ * If some promise is rejected you should catch it and process the next one.
  *
  * @param {Promise[]} array
  * @param {Function} action
@@ -92,8 +104,14 @@ function getFastestPromise(/* array */) {
  *    });
  *
  */
-function chainPromises(/* array, action */) {
-  throw new Error('Not implemented');
+function chainPromises(array, action) {
+  function f(accumulator, currentValue) {
+    return accumulator
+      .then((v1) => currentValue.then((v2) => action(v1, v2)))
+      .catch((e) => e);
+  }
+
+  return array.reduce(f);
 }
 
 module.exports = {
