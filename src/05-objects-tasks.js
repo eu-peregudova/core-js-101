@@ -20,8 +20,10 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+  this.getArea = () => this.width * this.height;
 }
 
 
@@ -35,8 +37,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,15 +53,17 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  Object.setPrototypeOf(obj, proto);
+  return obj;
 }
 
 
 /**
  * Css selectors builder
  *
- * Each complex selector can consists of type, id, class, attribute, pseudo-class
+ * Each complex selector can consist of type, id, class, attribute, pseudo-class
  * and pseudo-element selectors:
  *
  *    element#id.class[attr]:pseudoClass::pseudoElement
@@ -110,35 +114,70 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
-const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
-
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
+const emptySelector = {
+  element: '',
+  id: '',
+  class: [],
+  attr: [],
+  pseudoClass: [],
+  pseudoElement: '',
 };
+
+const formatRules = {
+  element: (v) => v,
+  id: (v) => `#${v}`,
+  class: (v) => `.${v}`,
+  attr: (v) => `[${v}]`,
+  pseudoClass: (v) => `:${v}`,
+  pseudoElement: (v) => `::${v}`,
+};
+
+class CssBuilder {
+  constructor(selector) {
+    this.selector = selector;
+    Object.entries(formatRules).forEach(([k, v]) => {
+      this[k] = this.addToValue.bind(this, k, v);
+    });
+  }
+
+  addToValue(name, format, value) {
+    // eslint-disable-next-line no-undef
+    const selector = structuredClone(this.selector);
+    if (
+      selector.lastCalled
+      && Object.keys(selector).indexOf(name) < Object.keys(selector).indexOf(selector.lastCalled)
+    ) {
+      throw Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    selector.lastCalled = name;
+    const formatted = format(value);
+    if (Array.isArray(selector[name])) {
+      selector[name].push(formatted);
+    } else if (!(selector[name]) && typeof selector[name] === 'string') {
+      selector[name] = formatted;
+    } else {
+      throw Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+    return new CssBuilder(selector);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  combine(cssBuilder1, combinator, cssBuilder2) {
+    const selector = {
+      combination1: cssBuilder1.stringify(),
+      combinator: ` ${combinator} `,
+      combination2: cssBuilder2.stringify(),
+    };
+    return new CssBuilder(selector);
+  }
+
+  stringify() {
+    this.selector.lastCalled = '';
+    return Object.values(this.selector).filter((v) => v).flat().join('');
+  }
+}
+
+const cssSelectorBuilder = new CssBuilder(emptySelector);
 
 
 module.exports = {
