@@ -141,8 +141,7 @@ class CssBuilder {
   }
 
   addToValue(name, format, value) {
-    // eslint-disable-next-line no-undef
-    const selector = structuredClone(this.selector);
+    const selector = JSON.parse(JSON.stringify(this.selector));
     if (
       selector.lastCalled
       && Object.keys(selector).indexOf(name) < Object.keys(selector).indexOf(selector.lastCalled)
